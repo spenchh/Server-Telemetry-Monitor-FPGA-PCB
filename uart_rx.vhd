@@ -60,12 +60,11 @@ begin
                         clk_count <= clk_count + 1;
 
                         if (clk_count = (C_CLKS_PER_BIT/2 - 1)) then -- Check start bit near its midpoint to reject short low glitches
+                            clk_count <= 0;
                             if (rx_sync = '0') then
-                                clk_count <= 0;
                                 bit_index <= 0;
                                 state     <= RX_DATA;
                             else
-                                clk_count <= 0;
                                 state     <= RX_IDLE;
                             end if;
                         end if;
@@ -88,14 +87,11 @@ begin
                     when RX_STOP  => -- Check stop bit
                         
                         if (clk_count = (C_CLKS_PER_BIT - 1)) then
+                            clk_count <= 0;
+                            state     <= RX_IDLE;
                             if (rx_sync = '1') then -- stop bit has expected level
-                                clk_count <= 0;
                                 o_data    <= rx_byte;
                                 o_valid   <= '1';
-                            else
-                                clk_count <= 0;
-                                o_valid   <= '0';
-                                state     <= RX_IDLE;
                             end if;
                         else
                             clk_count <= clk_count + 1;
