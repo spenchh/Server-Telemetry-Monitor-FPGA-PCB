@@ -1,5 +1,6 @@
 library ieee;
 use ieee.std_logic_1164.all;
+use work.telemetry_pkg.all;
 
 entity telemetry_top is
     generic(
@@ -19,9 +20,7 @@ end telemetry_top;
 architecture rtl of telemetry_top is
     signal rx_data  : std_logic_vector(7 downto 0);
     signal rx_valid : std_logic;
-    type t_display_mode is (SHOW_VOLTAGE, SHOW_CURRENT);
     signal display_mode : t_display_mode;
-
     signal digit0 : std_logic_vector(3 downto 0);
     signal digit1 : std_logic_vector(3 downto 0);
     signal digit2 : std_logic_vector(3 downto 0);
