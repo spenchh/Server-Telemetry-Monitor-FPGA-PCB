@@ -89,7 +89,7 @@ begin
                     -- ASCII 'v'
                     when x"76" => -- (97 + 21) / 16 = 6, R7 | 7 mod 16 = 7
                         o_display_mode <= SHOW_VOLTAGE;
-                        tx_data        <= char_to_byte(C_MSG_VOLTAGE(char_index))
+                        tx_data        <= char_to_byte(C_MSG_VOLTAGE(char_index));
                     
                     -- ASCII 'i'
                     when x"69" => -- (97 + 8) / 16 = 6, R9 | 6 mod 16 = 6
