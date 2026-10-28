@@ -31,6 +31,14 @@ architecture rtl of uart_top is
     constant C_MSG_VOLTAGE : string := "Showing Voltage!";
     constant C_MSG_CURRENT : string := "Showing Current!";
 
+    signal char_index : positive;
+
+    -- To index through Message
+    -- if (char_index = C_MSG_VOLTAGE'high) then
+    --     char_index <= 1;
+    -- else
+    --     char_index <= char_index + 1;
+    -- end if;
     -- Converts character to ASCII
     function char_to_byte(ch : character) return std_logic_vector is
     begin
@@ -69,21 +77,24 @@ begin
         if rising_edge(i_clk) then
             if (i_rst_n = '0') then
                 o_display_mode <= SHOW_VOLTAGE;
-                tx_data      <= (others => '0');
-                tx_start     <= '0';
+                tx_data        <= (others => '0');
+                tx_start       <= '0';
+                char_index     <= 1; -- Resets char_index to 1
 
             elsif (rx_valid = '1') then
+                
+
                 case rx_data is
                     -- Lowercase decimal starts at 97.
                     -- ASCII 'v'
                     when x"76" => -- (97 + 21) / 16 = 6, R7 | 7 mod 16 = 7
                         o_display_mode <= SHOW_VOLTAGE;
-                        tx_data        <= char_to_byte(C_MSG_VOLTAGE())
+                        tx_data        <= char_to_byte(C_MSG_VOLTAGE(char_index))
                     
                     -- ASCII 'i'
                     when x"69" => -- (97 + 8) / 16 = 6, R9 | 6 mod 16 = 6
                         o_display_mode <= SHOW_CURRENT;
-                        tx_data        <= C_MSG_CURRENT;
+                        tx_data        <= char_to_byte(C_MSG_CURRENT(char_index));
                     
                     when others =>
                         null;
@@ -93,3 +104,5 @@ begin
     end process;
 
 end architecture rtl;
+
+                
