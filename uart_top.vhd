@@ -1,5 +1,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+
 use work.telemetry_pkg.all;
 
 entity uart_top is
@@ -25,6 +27,16 @@ architecture rtl of uart_top is
     signal tx_busy  : std_logic;
     signal rx_data  : std_logic_vector (7 downto 0);
     signal rx_valid : std_logic;
+
+    constant C_MSG_VOLTAGE : string := "Showing Voltage!";
+    constant C_MSG_CURRENT : string := "Showing Current!";
+
+    -- Converts character to ASCII
+    function char_to_byte(ch : character) return std_logic_vector is
+    begin
+        return std_logic_vector(to_unsigned(character'pos(ch), 8));
+    end function;
+
 begin
     uart_tx : entity work.uart_tx
     generic map(
@@ -53,5 +65,31 @@ begin
         o_valid => rx_valid
     );
     
+    process (i_clk) begin
+        if rising_edge(i_clk) then
+            if (i_rst_n = '0') then
+                o_display_mode <= SHOW_VOLTAGE;
+                tx_data      <= (others => '0');
+                tx_start     <= '0';
+
+            elsif (rx_valid = '1') then
+                case rx_data is
+                    -- Lowercase decimal starts at 97.
+                    -- ASCII 'v'
+                    when x"76" => -- (97 + 21) / 16 = 6, R7 | 7 mod 16 = 7
+                        o_display_mode <= SHOW_VOLTAGE;
+                        tx_data        <= char_to_byte(C_MSG_VOLTAGE())
+                    
+                    -- ASCII 'i'
+                    when x"69" => -- (97 + 8) / 16 = 6, R9 | 6 mod 16 = 6
+                        o_display_mode <= SHOW_CURRENT;
+                        tx_data        <= C_MSG_CURRENT;
+                    
+                    when others =>
+                        null;
+                end case;
+            end if;
+        end if;
+    end process;
 
 end architecture rtl;
