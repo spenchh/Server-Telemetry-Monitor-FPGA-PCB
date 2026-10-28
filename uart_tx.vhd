@@ -1,10 +1,12 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
+-- UART is idle high
+-- Start bit = '0', Stop bit = '1'
 
 entity uart_tx is
     generic(
-        G_CLK_FREQ : integer range 100 to 100_000_000 := 0;
+        G_CLK_FREQ : integer range 100 to 100_000_000 := 100_000_000;
         G_BAUD_RATE : positive := 115_200
     );
     port(
@@ -24,7 +26,7 @@ architecture rtl of uart_tx is
     type t_tx_state is (TX_IDLE, TX_START, TX_DATA, TX_STOP);
     signal state            : t_tx_state;
     
-    signal bit_index        : natural range 0 to 7; -- tracks data bit being sent
+    signal bit_index        : natural range 0 to 7 := 0; -- tracks data bit being sent
     signal tx_byte          : std_logic_vector(7 downto 0); -- holds byte during transmission
 
 begin
@@ -40,7 +42,8 @@ begin
                 tx_byte   <= (others => '0');
             else
                 case state is
-                    when TX_IDLE  =>
+                    when TX_IDLE  => -- wait for internal 'i_start' request
+
                         clk_count <= 0;
                         o_busy    <= '0';
                         o_tx      <= '1';
@@ -50,13 +53,49 @@ begin
                             tx_byte <= i_data;
                             state   <= TX_START;
                             o_busy  <= '1';
+                            o_tx    <= '0';
                         end if;
 
-                    when TX_START =>
+                    when TX_START => -- Hold start bit for one full bit period
 
-                    when TX_DATA  =>
+                        if (clk_count = (C_CLKS_PER_BIT-1)) then
+                            clk_count <= 0;
+                            state <= TX_DATA;
+                            o_tx  <= tx_byte(bit_index); -- read after holding start bit for one cycle
+                            bit_index <= bit_index + 1;
+                        else
+                            clk_count <= clk_count + 1; 
+                        end if;
 
-                    when TX_STOP  =>
+                    when TX_DATA  => -- Send eight stored data bits, one at a time
+
+                        if (clk_count = (C_CLKS_PER_BIT-1)) then
+                            clk_count <= 0;
+
+                            -- Change state AFTER fully reading byte and hold stop bit high
+                            if (bit_index = 0) then 
+                                o_tx <= '1';
+                                state <= TX_STOP;
+                            elsif (bit_index = 7) then
+                                o_tx <= tx_byte(bit_index);
+                                bit_index <= 0;
+                            else
+                                o_tx <= tx_byte(bit_index);
+                                bit_index <= bit_index + 1;
+                            end if;
+                        else
+                            clk_count <= clk_count + 1; 
+                        end if;
+
+                    when TX_STOP  => -- Hold stop bit for one full bit period
+
+                        if (clk_count = (C_CLKS_PER_BIT-1)) then
+                            clk_count <= 0;
+                            o_busy <= '0';
+                            state <= TX_IDLE;
+                        else
+                            clk_count <= clk_count + 1; 
+                        end if;
 
                 end case;
             end if;
