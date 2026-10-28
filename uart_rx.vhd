@@ -3,6 +3,8 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use ieee.math_real.all;
 
+use work.definitions_pkg.all;
+
 -- FPGA Clock runs 100,000,000 in a second which is 10 ns per cycle
 -- UART sends 115,200 bits/second which is 1 bit every 868 FPGA clock cycles
 -- 868 FPGA clock cycles happen during one bit, which lasts 8.68 microseconds
